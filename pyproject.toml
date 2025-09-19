@@ -1,0 +1,15 @@
+[project]
+name = "landscape-locust"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "landscape-client",
+    "locust>=2.33.2",
+    "pycurl>=7.45.6",
+    "twisted>=25.5.0",
+]
+
+[tool.uv.sources]
+landscape-client = { git = "https://github.com/canonical/landscape-client.git" }

@@ -6,7 +6,8 @@ import psycopg2
 COMPUTER_QUERY = '''SELECT
     computer.secure_id,
     computer_status.next_exchange_token,
-    computer_status.next_expected_sequence
+    computer_status.next_expected_sequence,
+    computer.insecure_id
 FROM computer
 JOIN computer_status ON computer.id = computer_status.computer_id
 '''
@@ -49,8 +50,9 @@ def main():
     for x in cur.fetchall():
         si = x[0].tobytes()
         net = x[1].tobytes() if x[1] else None
+        ii = x[3]
 
-        results.append((si, net, x[2]))
+        results.append((si, net, x[2], ii))
 
     conn.close()
     asyncio.run(serve(results))

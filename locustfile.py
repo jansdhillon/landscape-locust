@@ -1,16 +1,17 @@
 import pickle
 import socket
 import time
+from urllib.parse import urlencode, urlparse
 
-from locust import User, task
+from locust import HttpUser, task, tag
 from spam_processes import generate_message, send_messages
 
 MAX_MESSAGE_COUNT = 1
-BUDDY = ('10.149.172.190', 9999)
+BUDDY_PORT = 9999
 
 
 class MessageSystemClient:
-    """Fancy."""
+    """A locust client for performing Landscape message exchanges."""
 
     def __init__(self, host, request_event):
         self._host = host
@@ -37,24 +38,33 @@ class MessageSystemClient:
         return result
 
 
-def get_params():
+def get_params(host):
     """Gets startup params from the locust buddy."""
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        s.connect(BUDDY)
+        hostparts = urlparse(host)
+        hostname = hostparts.hostname
+
+        s.connect((hostname, BUDDY_PORT))
         pickled = s.recv(1024)
-        secure_id, exchange_token, sequence = pickle.loads(pickled)
+        secure_id, exchange_token, sequence, insecure_id = pickle.loads(pickled)
 
-    return exchange_token, sequence, secure_id.decode()
+    return exchange_token, sequence, secure_id.decode(), insecure_id
 
-class MessageSystemUser(User):
+class MessageSystemUser(HttpUser):
 
     def __init__(self, environment):
         super().__init__(environment)
-        self.client = MessageSystemClient(self.host, environment.events.request)
+
+        self._message_system_client = MessageSystemClient(self.host, environment.events.request)
+
+    def wait_time(self):
+        """override default wait time."""
+        return 30
 
     def on_start(self):
-        self._next_exchange_token, self._sequence, self._id = get_params()
+        self._next_exchange_token, self._sequence, self._id, self._insecure_id = get_params(self.host)
 
+    @tag('message-traffic')
     @task
     def spam_active_processes(self):
         self._prev_processes = {}
@@ -64,7 +74,7 @@ class MessageSystemUser(User):
             if message:
                 messages.append(message)
 
-        result = self.client.send_messages(
+        result = self._message_system_client.send_messages(
             messages,
             self._sequence,
             self._next_exchange_token,
@@ -75,3 +85,9 @@ class MessageSystemUser(User):
             return
 
         self._next_exchange_token, self._sequence = result
+
+    @tag('ping-traffic')
+    @task
+    def spam_pings(self):
+        self.wait()
+        self.client.post(self.host + '/ping', data={'insecure_id': self._insecure_id})
