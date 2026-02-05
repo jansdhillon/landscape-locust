@@ -1,13 +1,11 @@
 import pickle
 import socket
 import time
-from urllib.parse import urlencode, urlparse
+from urllib.parse import urlparse
 
-from locust import HttpUser, task, tag
+from constants import BUDDY_PORT, MAX_MESSAGE_COUNT
+from locust import FastHttpUser, tag, task
 from spam_processes import generate_message, send_messages
-
-MAX_MESSAGE_COUNT = 1
-BUDDY_PORT = 9999
 
 
 class MessageSystemClient:
@@ -19,21 +17,23 @@ class MessageSystemClient:
 
     def send_messages(self, messages, sequence, token, cid):
         request_meta = {
-            'request_type': 'landscape-message',
-            'name': 'message-exchange',
-            'start_time': time.time(),
-            'response_length': 0,
-            'response': None,
-            'context': {},
-            'exception': None,
+            "request_type": "landscape-message",
+            "name": "message-exchange",
+            "start_time": time.time(),
+            "response_length": 0,
+            "response": None,
+            "context": {},
+            "exception": None,
         }
         start_perf_counter = time.perf_counter()
         try:
             result = send_messages(messages, sequence, token, cid, self._host)
         except Exception as e:
-            request_meta['exception'] = e
+            request_meta["exception"] = e
             result = None
-        request_meta['response_time'] = (time.perf_counter() - start_perf_counter) * 1000
+        request_meta["response_time"] = (
+            time.perf_counter() - start_perf_counter
+        ) * 1000
         self._request_event.fire(**request_meta)
         return result
 
@@ -50,21 +50,25 @@ def get_params(host):
 
     return exchange_token, sequence, secure_id.decode(), insecure_id
 
-class MessageSystemUser(HttpUser):
 
+class MessageSystemUser(FastHttpUser):
     def __init__(self, environment):
         super().__init__(environment)
 
-        self._message_system_client = MessageSystemClient(self.host, environment.events.request)
+        self._message_system_client = MessageSystemClient(
+            self.host, environment.events.request
+        )
 
     def wait_time(self):
         """override default wait time."""
         return 30
 
     def on_start(self):
-        self._next_exchange_token, self._sequence, self._id, self._insecure_id = get_params(self.host)
+        self._next_exchange_token, self._sequence, self._id, self._insecure_id = (
+            get_params(self.host)
+        )
 
-    @tag('message-traffic')
+    @tag("message-traffic")
     @task
     def spam_active_processes(self):
         self._prev_processes = {}
@@ -86,8 +90,8 @@ class MessageSystemUser(HttpUser):
 
         self._next_exchange_token, self._sequence = result
 
-    @tag('ping-traffic')
+    @tag("ping-traffic")
     @task
     def spam_pings(self):
         self.wait()
-        self.client.post(self.host + '/ping', data={'insecure_id': self._insecure_id})
+        self.client.post(self.host + "/ping", data={"insecure_id": self._insecure_id})

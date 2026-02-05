@@ -1,7 +1,7 @@
 [project]
 name = "landscape-locust"
-version = "0.1.0"
-description = "Add your description here"
+version = "0.0.1"
+description = "Load balancing for Landscape Server that uses Locust and Landscape Client directly to simulate traffic."
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
@@ -9,7 +9,14 @@ dependencies = [
     "locust>=2.33.2",
     "pycurl>=7.45.6",
     "twisted>=25.5.0",
+    "psycopg2-binary==2.9.11",
+    "ruff==0.14.11",
 ]
 
 [tool.uv.sources]
 landscape-client = { git = "https://github.com/canonical/landscape-client.git" }
+
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+select = ["ALL"]

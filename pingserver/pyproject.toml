@@ -1,0 +1,6 @@
+[tool.locust]
+locustfile = "locustfile.py"
+headless = true
+processes = 8
+users = 100000
+spawn-rate = 250
