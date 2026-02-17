@@ -1,17 +1,17 @@
-import pickle
-import socket
+import os
 import time
-from urllib.parse import urlparse
 
-from constants import BUDDY_PORT, MAX_MESSAGE_COUNT
 from locust import FastHttpUser, tag, task
-from spam_processes import generate_message, send_messages
+from locust.env import Environment
+from locust.event import EventHook
+
+from src.common import generate_message, get_params, send_messages
 
 
 class MessageSystemClient:
     """A locust client for performing Landscape message exchanges."""
 
-    def __init__(self, host, request_event):
+    def __init__(self, host: str, request_event: EventHook) -> None:
         self._host = host
         self._request_event = request_event
 
@@ -38,22 +38,12 @@ class MessageSystemClient:
         return result
 
 
-def get_params(host):
-    """Gets startup params from the locust buddy."""
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        hostparts = urlparse(host)
-        hostname = hostparts.hostname
-
-        s.connect((hostname, BUDDY_PORT))
-        pickled = s.recv(1024)
-        secure_id, exchange_token, sequence, insecure_id = pickle.loads(pickled)
-
-    return exchange_token, sequence, secure_id.decode(), insecure_id
-
-
 class MessageSystemUser(FastHttpUser):
-    def __init__(self, environment):
+    def __init__(self, environment: Environment) -> None:
         super().__init__(environment)
+
+        if not self.host:
+            return
 
         self._message_system_client = MessageSystemClient(
             self.host, environment.events.request
@@ -64,6 +54,9 @@ class MessageSystemUser(FastHttpUser):
         return 30
 
     def on_start(self):
+        if not self.host:
+            return
+
         self._next_exchange_token, self._sequence, self._id, self._insecure_id = (
             get_params(self.host)
         )
@@ -73,7 +66,10 @@ class MessageSystemUser(FastHttpUser):
     def spam_active_processes(self):
         self._prev_processes = {}
         messages = []
-        for _ in range(MAX_MESSAGE_COUNT):
+        max_messages = int(
+            os.getenv("LANDSCAPE_LOCUST_MESSAGE_SERVER_MAX_MESSAGES", "10")
+        )
+        for _ in range(max_messages):
             message, self._prev_processes = generate_message(self._prev_processes)
             if message:
                 messages.append(message)
@@ -89,9 +85,3 @@ class MessageSystemUser(FastHttpUser):
             return
 
         self._next_exchange_token, self._sequence = result
-
-    @tag("ping-traffic")
-    @task
-    def spam_pings(self):
-        self.wait()
-        self.client.post(self.host + "/ping", data={"insecure_id": self._insecure_id})

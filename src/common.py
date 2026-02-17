@@ -1,6 +1,8 @@
+import os
 import pickle
+import socket
+from urllib.parse import urlparse
 
-from constants import MAX_MESSAGE_COUNT
 from landscape import CLIENT_API
 from landscape.client.diff import diff
 from landscape.client.exchange import exchange_messages
@@ -19,14 +21,13 @@ def get_processes():
     return ps
 
 
-def get_changes(pdiff):
-    creates, updates, deletes = pdiff
-    changes = {
+def get_changes(process_diff: tuple):
+    creates, updates, deletes = process_diff
+    return {
         k + "-processes": list(v.values())
         for k, v in (("add", creates), ("update", updates), ("kill", deletes))
         if v
     }
-    return changes
 
 
 def send_messages(messages, sequence, exchange_token, computer_id, host):
@@ -47,7 +48,7 @@ def send_messages(messages, sequence, exchange_token, computer_id, host):
     return response.next_exchange_token, response.next_expected_sequence
 
 
-def generate_message(prev_processes):
+def generate_message(prev_processes: dict):
     message: dict[str, str | list] = {"type": "active-process-info"}
     processes = get_processes()
     process_diff = diff(prev_processes, processes)
@@ -60,28 +61,13 @@ def generate_message(prev_processes):
     return None, prev_processes
 
 
-def main():
-    with open("data.pickle", "rb") as f:
-        next_exchange_token, sequence = pickle.load(f)
+def get_params(host: str):
+    """Gets startup params from the locust buddy."""
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        hostname = urlparse(host).hostname
+        port = os.getenv("LANDSCAPE_LOCUST_BUDDY_PORT", "9999")
+        s.connect((hostname, port))
+        pickled = s.recv(1024)
+        secure_id, exchange_token, sequence, insecure_id = pickle.loads(pickled)
 
-    prev_processes = {}
-
-    try:
-        while True:
-            messages = []
-            for _ in range(MAX_MESSAGE_COUNT):
-                message, prev_processes = generate_message(prev_processes)
-                if message:
-                    messages.append(message)
-
-            next_exchange_token, sequence = send_messages(
-                messages, sequence, next_exchange_token
-            )
-
-    except Exception:
-        with open("data.pickle", "wb") as f:
-            pickle.dump((next_exchange_token, sequence), f, pickle.HIGHEST_PROTOCOL)
-
-
-if __name__ == "__main__":
-    main()
+    return exchange_token, sequence, secure_id.decode(), insecure_id

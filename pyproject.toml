@@ -5,18 +5,32 @@ description = "Load balancing for Landscape Server that uses Locust and Landscap
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
-    "landscape-client",
+    "landscape-client@https://github.com/canonical/landscape-client.git",
+    "locust==2.43.2",
     "locust>=2.33.2",
-    "pycurl>=7.45.6",
-    "twisted>=25.5.0",
+    "psycopg[binary]==3.3.2",
     "psycopg2-binary==2.9.11",
-    "ruff==0.14.11",
+    "pycurl==7.45.7",
+    "Twisted==25.5.0",
 ]
 
-[tool.uv.sources]
-landscape-client = { git = "https://github.com/canonical/landscape-client.git" }
+[project.optional-dependencies]
+dev = ["ty==0.0.15", "ruff==0.15.0"]
+
+[tool.locust]
+locustfile = "locustfile.py"
+headless = true
+processes = 8
+users = 100000
+spawn-rate = 250
 
 [tool.ruff]
 line-length = 120
 target-version = "py312"
 select = ["ALL"]
+ignore = ["COM812", "D", "ANN201", "BLE", "S"]
+
+[tool.ruff.lint.flake8-tidy-imports]
+ban-relative-imports = "all"
+
+[tool.ty.rules]

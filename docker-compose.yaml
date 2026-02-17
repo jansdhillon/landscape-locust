@@ -1,0 +1,119 @@
+services:
+  exchange-server:
+    pull_policy: build
+    build:
+      context: .
+      dockerfile: src/exchange/Dockerfile
+    image: landscape-locust/exchange-server:latest
+    container_name: landscape-locust-exchange
+    ports:
+      - "9999:9999"
+    environment:
+      - LANDSCAPE_LOCUST_EXCHANGE_SERVER_PORT=9999
+      - LANDSCAPE_LOCUST_EXCHANGE_SERVER_DB_HOST=localhost
+      - LANDSCAPE_LOCUST_EXCHANGE_SERVER_DB_NAME=landscape-test-main
+      - LANDSCAPE_LOCUST_EXCHANGE_SERVER_DB_USER=landscape
+      - LANDSCAPE_LOCUST_EXCHANGE_SERVER_DB_PASSWORD=landscape
+      - LANDSCAPE_LOCUST_EXCHANGE_SERVER_DB_PORT=5432
+    networks:
+      - landscape-locust-network
+    restart: unless-stopped
+
+  locust-ping-master:
+    pull_policy: build
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: landscape-locust:latest
+    container_name: locust-ping-master
+    ports:
+      - "8089:8089"
+    environment:
+      - LOCUST_MODE=master
+      - LOCUST_LOCUSTFILE=src/ping.py
+      - LOCUST_HOST=${LANDSCAPE_HOST:-https://landscape-server.local}
+    command: >
+      locust --master --locustfile src/ping.py --host ${LANDSCAPE_HOST:-https://landscape-server.local} --web-host 0.0.0.0
+    networks:
+      - landscape-locust-network
+    depends_on:
+      - exchange-server
+
+  locust-ping-worker:
+    image: landscape-locust:latest
+    environment:
+      - LOCUST_MODE=worker
+      - LOCUST_MASTER_NODE_HOST=locust-ping-master
+      - LOCUST_LOCUSTFILE=src/ping.py
+    command: >
+      locust --worker --master-host locust-ping-master --locustfile src/ping.py
+    networks:
+      - landscape-locust-network
+    depends_on:
+      - locust-ping-master
+    deploy:
+      replicas: 2
+
+  locust-message-master:
+    image: landscape-locust:latest
+    container_name: locust-message-master
+    ports:
+      - "8090:8089"
+    environment:
+      - LOCUST_MODE=master
+      - LOCUST_LOCUSTFILE=src/message.py
+      - LOCUST_HOST=${LANDSCAPE_HOST:-https://landscape-server.local}
+    command: >
+      locust --master --locustfile src/message.py --host ${LANDSCAPE_HOST:-https://landscape-server.local} --web-host 0.0.0.0
+    networks:
+      - landscape-locust-network
+    depends_on:
+      - exchange-server
+
+  locust-message-worker:
+    image: landscape-locust:latest
+    environment:
+      - LOCUST_MODE=worker
+      - LOCUST_MASTER_NODE_HOST=locust-message-master
+      - LOCUST_LOCUSTFILE=src/message.py
+    command: >
+      locust --worker --master-host locust-message-master --locustfile src/message.py
+    networks:
+      - landscape-locust-network
+    depends_on:
+      - locust-message-master
+    deploy:
+      replicas: 2
+
+  locust-api-master:
+    image: landscape-locust:latest
+    container_name: locust-api-master
+    ports:
+      - "8091:8089"
+    environment:
+      - LOCUST_MODE=master
+      - LOCUST_LOCUSTFILE=src/api.py
+      - LOCUST_HOST=${LANDSCAPE_HOST:-https://landscape-server.local}
+    command: >
+      locust --master --locustfile src/api.py --host ${LANDSCAPE_HOST:-https://landscape-server.local} --web-host 0.0.0.0
+    networks:
+      - landscape-locust-network
+
+  locust-api-worker:
+    image: landscape-locust:latest
+    environment:
+      - LOCUST_MODE=worker
+      - LOCUST_MASTER_NODE_HOST=locust-api-master
+      - LOCUST_LOCUSTFILE=src/api.py
+    command: >
+      locust --worker --master-host locust-api-master --locustfile src/api.py
+    networks:
+      - landscape-locust-network
+    depends_on:
+      - locust-api-master
+    deploy:
+      replicas: 2
+
+networks:
+  landscape-locust-network:
+    driver: bridge
