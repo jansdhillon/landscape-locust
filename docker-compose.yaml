@@ -17,7 +17,6 @@ services:
       - LANDSCAPE_LOCUST_EXCHANGE_SERVER_DB_PORT=${LANDSCAPE_LOCUST_EXCHANGE_SERVER_DB_PORT:-5432}
     networks:
       - landscape-locust-network
-      - landscape-net
     restart: unless-stopped
 
   locust-ping-master:
@@ -30,14 +29,13 @@ services:
     ports:
       - "8092:8089"
     environment:
-      - LOCUST_MODE=master
-      - LOCUST_LOCUSTFILE=ping.py
-      - LOCUST_HOST=${LANDSCAPE_HOST:-https://landscape-haproxy}
+      - LANDSCAPE_LOCUST_MODE=master
+      - LANDSCAPE_LOCUST_LOCUSTFILE=ping.py
+      - LANDSCAPE_LOCUST_HOST=${LANDSCAPE_LOCUST_HOST:-https://landscape-haproxy}
     command: >
-      locust --master --locustfile ping.py --host ${LANDSCAPE_HOST:-https://landscape-haproxy} --headless --users ${LOCUST_USERS:-100000} --spawn-rate ${LOCUST_SPAWN_RATE:-250} --expect-workers ${LOCUST_WORKERS:-2} --web-host 0.0.0.0
+      locust --master --locustfile ping.py --host ${LANDSCAPE_LOCUST_HOST:-https://landscape-haproxy} --headless --users ${LANDSCAPE_LOCUST_USERS:-100000} --spawn-rate ${LANDSCAPE_LOCUST_SPAWN_RATE:-250} --expect-workers ${LANDSCAPE_LOCUST_WORKERS:-2} --web-host 0.0.0.0
     networks:
       - landscape-locust-network
-      - landscape-net
     depends_on:
       - exchange-server
 
@@ -45,18 +43,17 @@ services:
     image: landscape-locust:latest
     pull_policy: build
     environment:
-      - LOCUST_MODE=worker
-      - LOCUST_MASTER_NODE_HOST=locust-ping-master
-      - LOCUST_LOCUSTFILE=ping.py
+      - LANDSCAPE_LOCUST_MODE=worker
+      - LANDSCAPE_LOCUST_MASTER_NODE_HOST=locust-ping-master
+      - LANDSCAPE_LOCUST_LOCUSTFILE=ping.py
     command: >
       locust --worker --master-host locust-ping-master --locustfile ping.py
     networks:
       - landscape-locust-network
-      - landscape-net
     depends_on:
       - locust-ping-master
     deploy:
-      replicas: ${LOCUST_WORKERS:-2}
+      replicas: ${LANDSCAPE_LOCUST_WORKERS:-2}
 
   locust-message-master:
     image: landscape-locust:latest
@@ -65,14 +62,13 @@ services:
     ports:
       - "8090:8089"
     environment:
-      - LOCUST_MODE=master
-      - LOCUST_LOCUSTFILE=message.py
-      - LOCUST_HOST=${LANDSCAPE_HOST:-https://landscape-haproxy}
+      - LANDSCAPE_LOCUST_MODE=master
+      - LANDSCAPE_LOCUST_LOCUSTFILE=message.py
+      - LANDSCAPE_LOCUST_HOST=${LANDSCAPE_LOCUST_HOST:-https://landscape-haproxy}
     command: >
-      locust --master --locustfile message.py --host ${LANDSCAPE_HOST:-https://landscape-haproxy} --headless --users ${LOCUST_USERS:-100000} --spawn-rate ${LOCUST_SPAWN_RATE:-250} --expect-workers ${LOCUST_WORKERS:-2} --web-host 0.0.0.0
+      locust --master --locustfile message.py --host ${LANDSCAPE_LOCUST_HOST:-https://landscape-haproxy} --headless --users ${LANDSCAPE_LOCUST_USERS:-100000} --spawn-rate ${LANDSCAPE_LOCUST_SPAWN_RATE:-250} --expect-workers ${LANDSCAPE_LOCUST_WORKERS:-2} --web-host 0.0.0.0
     networks:
       - landscape-locust-network
-      - landscape-net
     depends_on:
       - exchange-server
 
@@ -80,18 +76,17 @@ services:
     image: landscape-locust:latest
     pull_policy: build
     environment:
-      - LOCUST_MODE=worker
-      - LOCUST_MASTER_NODE_HOST=locust-message-master
-      - LOCUST_LOCUSTFILE=message.py
+      - LANDSCAPE_LOCUST_MODE=worker
+      - LANDSCAPE_LOCUST_MASTER_NODE_HOST=locust-message-master
+      - LANDSCAPE_LOCUST_LOCUSTFILE=message.py
     command: >
       locust --worker --master-host locust-message-master --locustfile message.py
     networks:
       - landscape-locust-network
-      - landscape-net
     depends_on:
       - locust-message-master
     deploy:
-      replicas: ${LOCUST_WORKERS:-2}
+      replicas: ${LANDSCAPE_LOCUST_WORKERS:-2}
 
   locust-api-master:
     image: landscape-locust:latest
@@ -100,35 +95,34 @@ services:
     ports:
       - "8091:8089"
     environment:
-      - LOCUST_MODE=master
-      - LOCUST_LOCUSTFILE=api.py
-      - LOCUST_HOST=${LANDSCAPE_HOST:-https://landscape-haproxy}
+      - LANDSCAPE_LOCUST_MODE=master
+      - LANDSCAPE_LOCUST_LOCUSTFILE=api.py
+      - LANDSCAPE_LOCUST_HOST=${LANDSCAPE_LOCUST_HOST:-https://landscape-haproxy}
+      - LANDSCAPE_LOCUST_EMAIL=${LANDSCAPE_LOCUST_EMAIL}
+      - LANDSCAPE_LOCUST_PASSWORD=${LANDSCAPE_LOCUST_PASSWORD}
     command: >
-      locust --master --locustfile api.py --host ${LANDSCAPE_HOST:-https://landscape-haproxy} --headless --users ${LOCUST_USERS:-100000} --spawn-rate ${LOCUST_SPAWN_RATE:-250} --expect-workers ${LOCUST_WORKERS:-2} --web-host 0.0.0.0
+      locust --master --locustfile api.py --host ${LANDSCAPE_LOCUST_HOST:-https://landscape-haproxy} --headless --users ${LANDSCAPE_LOCUST_USERS:-100000} --spawn-rate ${LANDSCAPE_LOCUST_SPAWN_RATE:-250} --expect-workers ${LANDSCAPE_LOCUST_WORKERS:-2} --web-host 0.0.0.0
     networks:
       - landscape-locust-network
-      - landscape-net
 
   locust-api-worker:
     image: landscape-locust:latest
     pull_policy: build
     environment:
-      - LOCUST_MODE=worker
-      - LOCUST_MASTER_NODE_HOST=locust-api-master
-      - LOCUST_LOCUSTFILE=api.py
+      - LANDSCAPE_LOCUST_MODE=worker
+      - LANDSCAPE_LOCUST_MASTER_NODE_HOST=locust-api-master
+      - LANDSCAPE_LOCUST_LOCUSTFILE=api.py
+      - LANDSCAPE_LOCUST_EMAIL=${LANDSCAPE_LOCUST_EMAIL}
+      - LANDSCAPE_LOCUST_PASSWORD=${LANDSCAPE_LOCUST_PASSWORD}
     command: >
       locust --worker --master-host locust-api-master --locustfile api.py
     networks:
       - landscape-locust-network
-      - landscape-net
     depends_on:
       - locust-api-master
     deploy:
-      replicas: ${LOCUST_WORKERS:-2}
+      replicas: ${LANDSCAPE_LOCUST_WORKERS:-2}
 
 networks:
   landscape-locust-network:
     driver: bridge
-  landscape-net:
-    external: true
-    name: ${LANDSCAPE_NETWORK:-landscape-dev_landscape-net}

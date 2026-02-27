@@ -3,11 +3,18 @@ import pickle
 import socket
 import time
 
+# Disable SSL verification for pycurl used inside exchange_messages.
+# exchange.py does `from landscape.lib.fetch import fetch` so we must patch
+# the name in that module's namespace, not the original module.
+import landscape.client.exchange as _exchange_module
 from landscape import CLIENT_API
 from landscape.client.diff import diff
 from landscape.client.exchange import exchange_messages
 from landscape.lib.process import ProcessInformation
 from locust import FastHttpUser, tag, task
+
+_real_fetch = _exchange_module.fetch
+_exchange_module.fetch = lambda *a, **kw: _real_fetch(*a, **{**kw, "insecure": True})
 from locust.env import Environment
 from locust.event import EventHook
 
@@ -111,6 +118,8 @@ class MessageSystemClient:
 
 
 class MessageSystemUser(FastHttpUser):
+    insecure = True
+
     def __init__(self, environment: Environment) -> None:
         super().__init__(environment)
 

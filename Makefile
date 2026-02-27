@@ -13,16 +13,12 @@ lint:
 	uv run ruff check --fix
 	uv run ruff format
 
-.PHONY: watch
-up:
+.PHONY: run
+run:
 	docker compose up -d --build
 
-.PHONY: up
-up:
-	docker compose up -d --build
-
-.PHONY: down
-down:
+.PHONY: stop
+stop:
 	docker compose down
 
 .PHONY: logs
@@ -39,4 +35,4 @@ message:
 
 .PHONY: api
 api:
-	docker compose up -d --build exchange-server locust-api-master locust-api-worker
+	docker compose up -d --build locust-api-master locust-api-worker
