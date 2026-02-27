@@ -1,4 +1,5 @@
 import asyncio
+import logging
 import os
 import pickle
 
@@ -14,6 +15,7 @@ JOIN computer_status ON computer.id = computer_status.computer_id
 """
 
 QUEUE = asyncio.Queue()
+logger = logging.getLogger(__name__)
 
 
 async def client_connected(_, writer: asyncio.StreamWriter):  # noqa: ANN001
@@ -39,11 +41,17 @@ async def serve(results: list):
     port = os.getenv("LANDSCAPE_LOCUST_EXCHANGE_SERVER_PORT", "9999")
     server = await asyncio.start_server(client_connected, "0.0.0.0", port)
 
+    logger.info("Listening on port %s with %d computers queued", port, QUEUE.qsize())
+
     async with server:
         await server.serve_forever()
 
 
 def main():
+    logging.basicConfig(
+        level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s"
+    )
+
     host = os.getenv("LANDSCAPE_LOCUST_EXCHANGE_SERVER_DB_HOST", "localhost")
     db_name = os.getenv(
         "LANDSCAPE_LOCUST_EXCHANGE_SERVER_DB_NAME", "landscape-test-main"
