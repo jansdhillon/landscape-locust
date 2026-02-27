@@ -1,24 +1,47 @@
 import os
 import pickle
 import socket
+import ssl
+import tempfile
 import time
+from urllib.parse import urlparse
 
-# Disable SSL verification for pycurl used inside exchange_messages.
-# exchange.py does `from landscape.lib.fetch import fetch` so we must patch
-# the name in that module's namespace, not the original module.
-import landscape.client.exchange as _exchange_module
 from landscape import CLIENT_API
 from landscape.client.diff import diff
 from landscape.client.exchange import exchange_messages
 from landscape.lib.process import ProcessInformation
 from locust import FastHttpUser, tag, task
-
-_real_fetch = _exchange_module.fetch
-_exchange_module.fetch = lambda *a, **kw: _real_fetch(*a, **{**kw, "insecure": True})
 from locust.env import Environment
 from locust.event import EventHook
 
 PROCESS_INFO = ProcessInformation()
+_cainfo_cache: dict[str, str | None] = {}
+
+
+def get_cainfo(host: str) -> str | None:
+    """Fetch the server's certificate once and cache it as a temp file for cainfo."""
+    if host in _cainfo_cache:
+        return _cainfo_cache[host]
+
+    parsed = urlparse(host)
+    if parsed.scheme != "https":
+        _cainfo_cache[host] = None
+        return None
+    hostname = parsed.hostname
+    port = parsed.port or 443
+    try:
+        cert_pem = ssl.get_server_certificate((hostname, port))
+        with tempfile.NamedTemporaryFile(
+            delete=False, suffix=".pem", mode="w", prefix="landscape-locust-cert-"
+        ) as f:
+            f.write(cert_pem)
+            _cainfo_cache[host] = f.name
+
+    except Exception:
+        _cainfo_cache[host] = None
+        return None
+
+    return _cainfo_cache[host]
 
 
 def get_processes():
@@ -41,7 +64,12 @@ def get_changes(process_diff: tuple):
 
 
 def send_messages(
-    messages: dict, sequence: int, exchange_token: str, computer_id: int, host: str
+    messages: dict,
+    sequence: int,
+    exchange_token: str,
+    computer_id: int,
+    host: str,
+    cainfo: str | None = None,
 ):
     payload = {
         "client-api": CLIENT_API,
@@ -55,6 +83,7 @@ def send_messages(
         host + "/message-system",
         computer_id=computer_id,
         exchange_token=exchange_token,
+        cainfo=cainfo,
     )
 
     return response.next_exchange_token, response.next_expected_sequence
@@ -90,9 +119,12 @@ def get_params(host: str):
 class MessageSystemClient:
     """A locust client for performing Landscape message exchanges."""
 
-    def __init__(self, host: str, request_event: EventHook) -> None:
+    def __init__(
+        self, host: str, request_event: EventHook, cainfo: str | None = None
+    ) -> None:
         self._host = host
         self._request_event = request_event
+        self._cainfo = cainfo
 
     def send_messages(self, messages: dict, sequence: int, token: str, cid: int):
         request_meta = {
@@ -106,7 +138,9 @@ class MessageSystemClient:
         }
         start_perf_counter = time.perf_counter()
         try:
-            result = send_messages(messages, sequence, token, cid, self._host)
+            result = send_messages(
+                messages, sequence, token, cid, self._host, self._cainfo
+            )
         except Exception as e:
             request_meta["exception"] = e
             result = None
@@ -126,8 +160,9 @@ class MessageSystemUser(FastHttpUser):
         if not self.host:
             return
 
+        cainfo = get_cainfo(self.host)
         self._message_system_client = MessageSystemClient(
-            self.host, environment.events.request
+            self.host, environment.events.request, cainfo
         )
 
     def wait_time(self):
