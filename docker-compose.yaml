@@ -9,12 +9,12 @@ services:
     ports:
       - "9999:9999"
     environment:
-      - LANDSCAPE_LOCUST_EXCHANGE_SERVER_PORT=9999
-      - LANDSCAPE_LOCUST_EXCHANGE_SERVER_DB_HOST=landscape-postgres
-      - LANDSCAPE_LOCUST_EXCHANGE_SERVER_DB_NAME=landscape-test-main
-      - LANDSCAPE_LOCUST_EXCHANGE_SERVER_DB_USER=landscape
-      - LANDSCAPE_LOCUST_EXCHANGE_SERVER_DB_PASSWORD=landscape
-      - LANDSCAPE_LOCUST_EXCHANGE_SERVER_DB_PORT=5432
+      - LANDSCAPE_LOCUST_EXCHANGE_SERVER_PORT=${LANDSCAPE_LOCUST_EXCHANGE_SERVER_PORT:-9999}
+      - LANDSCAPE_LOCUST_EXCHANGE_SERVER_DB_HOST=${LANDSCAPE_LOCUST_EXCHANGE_SERVER_DB_HOST:-landscape-postgres}
+      - LANDSCAPE_LOCUST_EXCHANGE_SERVER_DB_NAME=${LANDSCAPE_LOCUST_EXCHANGE_SERVER_DB_NAME:-landscape-test-main}
+      - LANDSCAPE_LOCUST_EXCHANGE_SERVER_DB_USER=${LANDSCAPE_LOCUST_EXCHANGE_SERVER_DB_USER:-landscape}
+      - LANDSCAPE_LOCUST_EXCHANGE_SERVER_DB_PASSWORD=${LANDSCAPE_LOCUST_EXCHANGE_SERVER_DB_PASSWORD:-landscape}
+      - LANDSCAPE_LOCUST_EXCHANGE_SERVER_DB_PORT=${LANDSCAPE_LOCUST_EXCHANGE_SERVER_DB_PORT:-5432}
     networks:
       - landscape-locust-network
       - landscape-net
@@ -32,9 +32,9 @@ services:
     environment:
       - LOCUST_MODE=master
       - LOCUST_LOCUSTFILE=ping.py
-      - LOCUST_HOST=${LANDSCAPE_HOST:-http://landscape-haproxy}
+      - LOCUST_HOST=${LANDSCAPE_HOST:-https://landscape-haproxy}
     command: >
-      locust --master --locustfile ping.py --host ${LANDSCAPE_HOST:-http://landscape-haproxy} --headless --users ${LOCUST_USERS:-100000} --spawn-rate ${LOCUST_SPAWN_RATE:-250} --expect-workers 8 --web-host 0.0.0.0
+      locust --master --locustfile ping.py --host ${LANDSCAPE_HOST:-https://landscape-haproxy} --headless --users ${LOCUST_USERS:-100000} --spawn-rate ${LOCUST_SPAWN_RATE:-250} --expect-workers ${LOCUST_WORKERS:-2} --web-host 0.0.0.0
     networks:
       - landscape-locust-network
       - landscape-net
@@ -56,7 +56,7 @@ services:
     depends_on:
       - locust-ping-master
     deploy:
-      replicas: 8
+      replicas: ${LOCUST_WORKERS:-2}
 
   locust-message-master:
     image: landscape-locust:latest
@@ -67,9 +67,9 @@ services:
     environment:
       - LOCUST_MODE=master
       - LOCUST_LOCUSTFILE=message.py
-      - LOCUST_HOST=${LANDSCAPE_HOST:-http://landscape-haproxy}
+      - LOCUST_HOST=${LANDSCAPE_HOST:-https://landscape-haproxy}
     command: >
-      locust --master --locustfile message.py --host ${LANDSCAPE_HOST:-http://landscape-haproxy} --headless --users ${LOCUST_USERS:-100000} --spawn-rate ${LOCUST_SPAWN_RATE:-250} --expect-workers 8 --web-host 0.0.0.0
+      locust --master --locustfile message.py --host ${LANDSCAPE_HOST:-https://landscape-haproxy} --headless --users ${LOCUST_USERS:-100000} --spawn-rate ${LOCUST_SPAWN_RATE:-250} --expect-workers ${LOCUST_WORKERS:-2} --web-host 0.0.0.0
     networks:
       - landscape-locust-network
       - landscape-net
@@ -91,7 +91,7 @@ services:
     depends_on:
       - locust-message-master
     deploy:
-      replicas: 8
+      replicas: ${LOCUST_WORKERS:-2}
 
   locust-api-master:
     image: landscape-locust:latest
@@ -102,9 +102,9 @@ services:
     environment:
       - LOCUST_MODE=master
       - LOCUST_LOCUSTFILE=api.py
-      - LOCUST_HOST=${LANDSCAPE_HOST:-http://landscape-haproxy}
+      - LOCUST_HOST=${LANDSCAPE_HOST:-https://landscape-haproxy}
     command: >
-      locust --master --locustfile api.py --host ${LANDSCAPE_HOST:-http://landscape-haproxy} --headless --users ${LOCUST_USERS:-100000} --spawn-rate ${LOCUST_SPAWN_RATE:-250} --expect-workers 8 --web-host 0.0.0.0
+      locust --master --locustfile api.py --host ${LANDSCAPE_HOST:-https://landscape-haproxy} --headless --users ${LOCUST_USERS:-100000} --spawn-rate ${LOCUST_SPAWN_RATE:-250} --expect-workers ${LOCUST_WORKERS:-2} --web-host 0.0.0.0
     networks:
       - landscape-locust-network
       - landscape-net
@@ -124,11 +124,11 @@ services:
     depends_on:
       - locust-api-master
     deploy:
-      replicas: 8
+      replicas: ${LOCUST_WORKERS:-2}
 
 networks:
   landscape-locust-network:
     driver: bridge
   landscape-net:
     external: true
-    name: landscape-dev_landscape-net
+    name: ${LANDSCAPE_NETWORK:-landscape-dev_landscape-net}
