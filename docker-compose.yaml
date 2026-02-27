@@ -41,6 +41,7 @@ services:
 
   locust-ping-worker:
     image: landscape-locust:latest
+    pull_policy: build
     environment:
       - LOCUST_MODE=worker
       - LOCUST_MASTER_NODE_HOST=locust-ping-master
@@ -57,6 +58,7 @@ services:
   locust-message-master:
     image: landscape-locust:latest
     container_name: locust-message-master
+    pull_policy: build
     ports:
       - "8090:8089"
     environment:
@@ -72,6 +74,7 @@ services:
 
   locust-message-worker:
     image: landscape-locust:latest
+    pull_policy: build
     environment:
       - LOCUST_MODE=worker
       - LOCUST_MASTER_NODE_HOST=locust-message-master
@@ -87,6 +90,7 @@ services:
 
   locust-api-master:
     image: landscape-locust:latest
+    pull_policy: build
     container_name: locust-api-master
     ports:
       - "8091:8089"
@@ -101,6 +105,7 @@ services:
 
   locust-api-worker:
     image: landscape-locust:latest
+    pull_policy: build
     environment:
       - LOCUST_MODE=worker
       - LOCUST_MASTER_NODE_HOST=locust-api-master
