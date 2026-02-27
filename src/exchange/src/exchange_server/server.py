@@ -16,7 +16,7 @@ JOIN computer_status ON computer.id = computer_status.computer_id
 QUEUE = asyncio.Queue()
 
 
-async def client_connected(_, writer: asyncio.StreamWriter):
+async def client_connected(_, writer: asyncio.StreamWriter):  # noqa: ANN001
     if QUEUE.empty():
         writer.close()
         await writer.wait_closed()

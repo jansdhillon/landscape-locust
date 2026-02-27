@@ -1,17 +1,26 @@
-FROM python:3.12-slim
+FROM ghcr.io/astral-sh/uv:python3.12-bookworm-slim AS uv
 
 WORKDIR /app
 
-# Install uv
-RUN pip install --no-cache-dir uv
+ENV UV_COMPILE_BYTECODE=1
 
-# Copy project files (build context should be project root)
-COPY pyproject.toml .
-COPY src/ ./src/
+ENV UV_LINK_MODE=copy
 
-# Install only psycopg2-binary for the exchange server
-RUN uv pip install --system psycopg2-binary
+RUN --mount=type=cache,target=/root/.cache/uv \
+    --mount=type=bind,source=uv.lock,target=uv.lock \
+    --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
+    uv sync --locked --no-install-project --no-dev --no-editable
 
-WORKDIR /app/src/exchange
+ADD . /app
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --locked --no-dev --no-editable
 
-ENTRYPOINT [ "python3", "server.py" ]
+FROM python:3.12-slim-bookworm
+
+WORKDIR /app
+
+COPY --from=uv /app/.venv /app/.venv
+
+ENV PATH="/app/.venv/bin:$PATH"
+
+ENTRYPOINT ["exchange-server"]

@@ -2,8 +2,8 @@ services:
   exchange-server:
     pull_policy: build
     build:
-      context: .
-      dockerfile: src/exchange/Dockerfile
+      context: src/exchange
+      dockerfile: Dockerfile
     image: landscape-locust/exchange-server:latest
     container_name: landscape-locust-exchange
     ports:
@@ -30,10 +30,10 @@ services:
       - "8089:8089"
     environment:
       - LOCUST_MODE=master
-      - LOCUST_LOCUSTFILE=src/ping.py
+      - LOCUST_LOCUSTFILE=src/locustfiles/ping.py
       - LOCUST_HOST=${LANDSCAPE_HOST:-https://landscape-server.local}
     command: >
-      locust --master --locustfile src/ping.py --host ${LANDSCAPE_HOST:-https://landscape-server.local} --web-host 0.0.0.0
+      locust --master --locustfile src/locustfiles/ping.py --host ${LANDSCAPE_HOST:-https://landscape-server.local} --web-host 0.0.0.0
     networks:
       - landscape-locust-network
     depends_on:
@@ -45,9 +45,9 @@ services:
     environment:
       - LOCUST_MODE=worker
       - LOCUST_MASTER_NODE_HOST=locust-ping-master
-      - LOCUST_LOCUSTFILE=src/ping.py
+      - LOCUST_LOCUSTFILE=src/locustfiles/ping.py
     command: >
-      locust --worker --master-host locust-ping-master --locustfile src/ping.py
+      locust --worker --master-host locust-ping-master --locustfile src/locustfiles/ping.py
     networks:
       - landscape-locust-network
     depends_on:
@@ -63,10 +63,10 @@ services:
       - "8090:8089"
     environment:
       - LOCUST_MODE=master
-      - LOCUST_LOCUSTFILE=src/message.py
+      - LOCUST_LOCUSTFILE=src/locustfiles/message.py
       - LOCUST_HOST=${LANDSCAPE_HOST:-https://landscape-server.local}
     command: >
-      locust --master --locustfile src/message.py --host ${LANDSCAPE_HOST:-https://landscape-server.local} --web-host 0.0.0.0
+      locust --master --locustfile src/locustfiles/message.py --host ${LANDSCAPE_HOST:-https://landscape-server.local} --web-host 0.0.0.0
     networks:
       - landscape-locust-network
     depends_on:
@@ -78,9 +78,9 @@ services:
     environment:
       - LOCUST_MODE=worker
       - LOCUST_MASTER_NODE_HOST=locust-message-master
-      - LOCUST_LOCUSTFILE=src/message.py
+      - LOCUST_LOCUSTFILE=src/locustfiles/message.py
     command: >
-      locust --worker --master-host locust-message-master --locustfile src/message.py
+      locust --worker --master-host locust-message-master --locustfile src/locustfiles/message.py
     networks:
       - landscape-locust-network
     depends_on:
@@ -96,10 +96,10 @@ services:
       - "8091:8089"
     environment:
       - LOCUST_MODE=master
-      - LOCUST_LOCUSTFILE=src/api.py
+      - LOCUST_LOCUSTFILE=src/locustfiles/api.py
       - LOCUST_HOST=${LANDSCAPE_HOST:-https://landscape-server.local}
     command: >
-      locust --master --locustfile src/api.py --host ${LANDSCAPE_HOST:-https://landscape-server.local} --web-host 0.0.0.0
+      locust --master --locustfile src/locustfiles/api.py --host ${LANDSCAPE_HOST:-https://landscape-server.local} --web-host 0.0.0.0
     networks:
       - landscape-locust-network
 
@@ -109,9 +109,9 @@ services:
     environment:
       - LOCUST_MODE=worker
       - LOCUST_MASTER_NODE_HOST=locust-api-master
-      - LOCUST_LOCUSTFILE=src/api.py
+      - LOCUST_LOCUSTFILE=src/locustfiles/api.py
     command: >
-      locust --worker --master-host locust-api-master --locustfile src/api.py
+      locust --worker --master-host locust-api-master --locustfile src/locustfiles/api.py
     networks:
       - landscape-locust-network
     depends_on:

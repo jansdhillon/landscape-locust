@@ -1,0 +1,12 @@
+[project]
+name = "exchange-server"
+version = "0.0.1"
+description = "A server that queries real computers from Landscape and serves their process"
+dependencies = ["psycopg2-binary"]
+
+[project.scripts]
+exchange-server = "exchange_server.server:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
