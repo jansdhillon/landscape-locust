@@ -71,7 +71,7 @@ def get_params(host: str):
     """Gets startup params from the locust buddy."""
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         hostname = urlparse(host).hostname
-        port = os.getenv("LANDSCAPE_LOCUST_BUDDY_PORT", "9999")
+        port = os.getenv("LANDSCAPE_LOCUST_EXCHANGE_SERVER_PORT", "9999")
         s.connect((hostname, port))
         pickled = s.recv(1024)
         secure_id, exchange_token, sequence, insecure_id = pickle.loads(pickled)

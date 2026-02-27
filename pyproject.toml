@@ -1,18 +1,9 @@
 [project]
 name = "landscape-locust"
 version = "0.0.1"
-description = "Load balancing for Landscape Server that uses Locust and Landscape Client directly to simulate traffic."
-readme = "README.md"
+description = "Monorepo root — see src/locustfiles and src/exchange for packages."
 requires-python = ">=3.12"
-dependencies = [
-    "landscape-client@https://github.com/canonical/landscape-client.git",
-    "locust==2.43.2",
-    "locust>=2.33.2",
-    "psycopg[binary]==3.3.2",
-    "psycopg2-binary==2.9.11",
-    "pycurl==7.45.7",
-    "Twisted==25.5.0",
-]
+dependencies = []
 
 [project.optional-dependencies]
 dev = ["ty==0.0.15", "ruff==0.15.0"]

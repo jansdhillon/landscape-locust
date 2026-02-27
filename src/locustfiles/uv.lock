@@ -478,7 +478,7 @@ version = "25.8.2+git6468"
 source = { git = "https://github.com/canonical/landscape-client.git#1175245773dfd9a2c9a777cffbd97e44266f39eb" }
 
 [[package]]
-name = "landscape-locust"
+name = "landscape-locustfiles"
 version = "0.0.1"
 source = { virtual = "." }
 dependencies = [
@@ -500,7 +500,6 @@ dev = [
 requires-dist = [
     { name = "landscape-client", git = "https://github.com/canonical/landscape-client.git" },
     { name = "locust", specifier = "==2.43.2" },
-    { name = "locust", specifier = ">=2.33.2" },
     { name = "psycopg", extras = ["binary"], specifier = "==3.3.2" },
     { name = "psycopg2-binary", specifier = "==2.9.11" },
     { name = "pycurl", specifier = "==7.45.7" },

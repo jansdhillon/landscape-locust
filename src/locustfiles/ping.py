@@ -1,5 +1,5 @@
 from locust import tag, task
-from locustfiles.message import MessageSystemUser
+from message import MessageSystemUser
 
 
 class PingserverUser(MessageSystemUser):

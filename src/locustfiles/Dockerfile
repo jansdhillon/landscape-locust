@@ -22,8 +22,7 @@ FROM python:3.12-slim-bookworm
 
 WORKDIR /app
 
-COPY --from=uv /app/.venv /app/.venv
-COPY --from=uv /app/src /app/src
+COPY --from=uv /app /app
 
 ENV PATH="/app/.venv/bin:$PATH"
-ENV PYTHONPATH="/app/src"
+ENV PYTHONPATH="/app"
