@@ -33,32 +33,26 @@ Key variables:
 
 ## Usage
 
-Each scenario has two variants: a regular one (external Landscape, DB reachable by hostname) and a `-local` one that joins the Docker network of a locally running Landscape Server dev setup.
-
 ### Ping traffic
 
 ```sh
 make ping
-make ping-local
 ```
 
 ### Message system traffic
 
 ```sh
 make message
-make message-local
 ```
 
 ### REST API traffic
 
 ```sh
 make api
-make api-local
 ```
 
 ### All scenarios
 
 ```sh
 make run
-make run-local
 ```
