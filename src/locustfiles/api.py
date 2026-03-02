@@ -22,12 +22,23 @@ class APIUser(FastHttpUser):
                 self._jwt = APIUser._jwt
                 return
 
-            email = os.getenv("LANDSCAPE_LOCUST_EMAIL")
-            password = os.getenv("LANDSCAPE_LOCUST_PASSWORD")
+            access_key = os.getenv("LANDSCAPE_LOCUST_ACCESS_KEY")
+            secret_key = os.getenv("LANDSCAPE_LOCUST_SECRET_KEY")
+
+            if access_key and secret_key:
+                endpoint = "/api/login/access-key"
+                payload = {"access_key": access_key, "secret_key": secret_key}
+                identifier = access_key
+            else:
+                endpoint = "/api/login"
+                payload = {
+                    "email": os.getenv("LANDSCAPE_LOCUST_EMAIL"),
+                    "password": os.getenv("LANDSCAPE_LOCUST_PASSWORD"),
+                }
+                identifier = payload["email"]
+
             with self.client.post(
-                "/api/login",
-                json={"email": email, "password": password},
-                catch_response=True,
+                endpoint, json=payload, catch_response=True
             ) as response:
                 try:
                     data = response.json()
@@ -39,7 +50,7 @@ class APIUser(FastHttpUser):
                 APIUser._jwt = data.get("token")
                 if APIUser._jwt:
                     response.success()
-                    logger.info("Logged in as %s", email)
+                    logger.info("Logged in as %s", identifier)
                 else:
                     response.failure(f"No token in login response: {data}")
             self._jwt = APIUser._jwt

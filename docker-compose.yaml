@@ -100,6 +100,8 @@ services:
       - LANDSCAPE_LOCUST_HOST=${LANDSCAPE_LOCUST_HOST:-https://landscape-haproxy}
       - LANDSCAPE_LOCUST_EMAIL=${LANDSCAPE_LOCUST_EMAIL}
       - LANDSCAPE_LOCUST_PASSWORD=${LANDSCAPE_LOCUST_PASSWORD}
+      - LANDSCAPE_LOCUST_ACCESS_KEY=${LANDSCAPE_LOCUST_ACCESS_KEY}
+      - LANDSCAPE_LOCUST_SECRET_KEY=${LANDSCAPE_LOCUST_SECRET_KEY}
     command: >
       locust --master --locustfile api.py --host ${LANDSCAPE_LOCUST_HOST:-https://landscape-haproxy} --headless --users ${LANDSCAPE_LOCUST_USERS:-100000} --spawn-rate ${LANDSCAPE_LOCUST_SPAWN_RATE:-250} --expect-workers ${LANDSCAPE_LOCUST_WORKERS:-2} --web-host 0.0.0.0
     networks:
@@ -114,6 +116,8 @@ services:
       - LANDSCAPE_LOCUST_LOCUSTFILE=api.py
       - LANDSCAPE_LOCUST_EMAIL=${LANDSCAPE_LOCUST_EMAIL}
       - LANDSCAPE_LOCUST_PASSWORD=${LANDSCAPE_LOCUST_PASSWORD}
+      - LANDSCAPE_LOCUST_ACCESS_KEY=${LANDSCAPE_LOCUST_ACCESS_KEY}
+      - LANDSCAPE_LOCUST_SECRET_KEY=${LANDSCAPE_LOCUST_SECRET_KEY}
     command: >
       locust --worker --master-host locust-api-master --locustfile api.py
     networks:
