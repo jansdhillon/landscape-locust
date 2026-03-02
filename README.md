@@ -4,9 +4,11 @@ Load testing tool for Landscape Server that simulates traffic from Landscape Cli
 
 ## Setup
 
-1. Install [`uv`](https://docs.astral.sh/uv/getting-started/installation/).
+1. Install [Docker](https://docs.docker.com/engine/install/ubuntu/).
 
-2. Copy `.env.example` to `.env` and fill in your values:
+2. Install [uv](https://docs.astral.sh/uv/getting-started/installation/).
+
+3. Copy `.env.example` to `.env` and fill in your values:
 
 ```sh
 cp .env.example .env

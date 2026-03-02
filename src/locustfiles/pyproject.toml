@@ -12,17 +12,3 @@ dependencies = [
     "pycurl==7.45.7",
     "Twisted==25.5.0",
 ]
-
-[project.optional-dependencies]
-dev = ["ty==0.0.15", "ruff==0.15.0"]
-
-[tool.ruff]
-line-length = 120
-target-version = "py312"
-select = ["ALL"]
-ignore = ["COM812", "D", "ANN201", "BLE", "S"]
-
-[tool.ruff.lint.flake8-tidy-imports]
-ban-relative-imports = "all"
-
-[tool.ty.rules]
